@@ -28,7 +28,7 @@ var extRes = (function(){
 		 *
 		 * @param {string} fileName
 		 */
-		add: (fileName) => {
+		add(fileName){
 			if (fileName.substr(-4) === '.css') {
 				return methods.addStyle(fileName);
 			}
@@ -47,7 +47,7 @@ var extRes = (function(){
 		 * @param {object} options   Options to overwrite the default options
 		 * @param {string} resolver  Either 'body' or 'head' can be used here. Default: body
 		 */
-		addScript: (fileName, options = {}, resolver = 'body', instance) => {
+		addScript(fileName, options = {}, resolver = 'body', instance){
 			options = merge(merge({}, defaults.script), options);
 
 			try {
@@ -73,7 +73,7 @@ var extRes = (function(){
 		 * @param  {object} options
 		 * @param  {string} resolver
 		 */
-		addScriptTag: (fileName, options, resolver, instance) => {
+		addScriptTag(fileName, options, resolver, instance){
 			var scriptTag = methods.newScriptTag(fileName, options);
 
 			methods.addSuccessCallback(scriptTag, fileName, instance);
@@ -87,7 +87,7 @@ var extRes = (function(){
 		 *
 		 * @param  {string} fileName
 		 */
-		ensureRegisterExists: (fileName, options, instance) => {
+		ensureRegisterExists(fileName, options, instance){
 			if (typeof register[fileName] !== "undefined") {
 				throw `${fileName} has already been loaded`;
 			}
@@ -105,7 +105,7 @@ var extRes = (function(){
 		 * @param  {function} callback
 		 * @param  {Vue} instance
 		 */
-		addCallbackOrExecute: (register, callback, instance) => {
+		addCallbackOrExecute(register, callback, instance){
 			if(register === true){
 				callback.call(instance);
 			} else {
@@ -120,7 +120,7 @@ var extRes = (function(){
 		 * @param  {object} options
 		 * @return {HTMLElement}
 		 */
-		newScriptTag: (fileName, options) => {
+		newScriptTag(fileName, options){
 			var scriptTag  = document.createElement('script');
 
 			scriptTag.src  = fileName;
@@ -143,7 +143,7 @@ var extRes = (function(){
 		 * @param  {HTMLElement} scriptTag
 		 * @param  {String} fileName
 		 */
-		addSuccessCallback: (scriptTag, fileName, instance) => {
+		addSuccessCallback(scriptTag, fileName, instance){
 			scriptTag.onload =
 			scriptTag.onreadystatechange = function() {
 				if (register[fileName] !== true &&
@@ -161,7 +161,7 @@ var extRes = (function(){
 		 * @param  {string} fileName
 		 * @param  {Vue} instance
 		 */
-		executeCallbacks: (fileName, instance) => {
+		executeCallbacks(fileName, instance){
 			if(typeof register[fileName] !== "boolean"){
 				each(register[fileName], x => x.call(instance, fileName));
 			}
@@ -173,7 +173,7 @@ var extRes = (function(){
 		 * @param {string} fileName
 		 * @param {object} options
 		 */
-		addStyle: (fileName, options = {}) => {
+		addStyle(fileName, options = {}){
 			options = merge(merge({}, defaults.style), options);
 
 			let styleTag   = document.createElement('link');
@@ -190,7 +190,7 @@ var extRes = (function(){
 		 *
 		 * @return {HTMLElement}
 		 */
-		getHead: () => {
+		getHead(){
 			return document.getElementsByTagName('head')[0];
 		},
 
@@ -199,7 +199,7 @@ var extRes = (function(){
 		 *
 		 * @return {HTMLElement}
 		 */
-		getBody: () => {
+		getBody(){
 			return document.getElementsByTagName('body')[0];
 		}
 	};
@@ -213,7 +213,7 @@ var extRes = (function(){
 })();
 
 export default {
-	created: function() {
+	created() {
 		var type = typeof this.$options.external;
 
 		if (type !== "undefined") {
