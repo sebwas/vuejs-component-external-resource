@@ -35,7 +35,7 @@ Using `external` as a function and use the loader API directly. It offers three 
 ```javascript
 {
 	// ...
-	external: (loader) => {
+	external(loader) {
 		loader.add('https://cdnjs.cloudflare.com/ajax/libs/Hyphenator/5.0.1/Hyphenator.min.js'); // Automatically guess, or get an exception
 		loader.addScript('https://cdnjs.cloudflare.com/ajax/libs/SoundJS/0.6.0/soundjs.min.js', {
 			success: (fileName) => {
