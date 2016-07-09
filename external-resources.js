@@ -47,12 +47,12 @@ var extRes = (function(){
 		 * @param {object} options   Options to overwrite the default options
 		 * @param {string} resolver  Either 'body' or 'head' can be used here. Default: body
 		 */
-		addScript(fileName, options = {}, resolver = 'body', instance){
+		addScript(fileName, options = {}, resolver = 'body'){
 			options = merge(merge({}, defaults.script), options);
 
 			try {
 				methods.ensureRegisterExists(fileName);
-				methods.addScriptTag(fileName, options, resolver, instance);
+				methods.addScriptTag(fileName, options, resolver, this);
 			} catch(e) {
 				if(e.toString().substr(-23) === "has already been loaded"){
 					console.info(e);
@@ -62,7 +62,7 @@ var extRes = (function(){
 					throw e;
 				}
 			} finally {
-				methods.addCallbackOrExecute(register[fileName], options.success, instance);
+				methods.addCallbackOrExecute(register[fileName], options.success, this);
 			}
 		},
 
@@ -208,7 +208,14 @@ var extRes = (function(){
 	return {
 		add:       methods.add,
 		addScript: methods.addScript,
-		addStyle:  methods.addStyle
+		addStyle:  methods.addStyle,
+		bind:      (obj) => {
+			return {
+				add:       methods.add.bind(obj),
+				addScript: methods.addScript.bind(obj),
+				addStyle:  methods.addStyle.bind(obj),
+			};
+		}
 	};
 })();
 
@@ -222,7 +229,7 @@ export default {
 			// execute it in the context of our Vue component, exposing our
 			// extRes object
 			if (type === "function") {
-				return this.$options.external.call(this, extRes);
+				return this.$options.external.call(this, extRes.bind(this));
 			}
 
 			// Type 2:
@@ -249,7 +256,7 @@ export default {
 					// The value is a function, so we execute it in the context of our Vue
 					// component with the add* functions passed as object
 					if (typeof v === "function") {
-						return v.call(that, extRes);
+						return v.call(that, extRes.bind(that));
 					}
 
 					// Fallback:
