@@ -1,4 +1,4 @@
-import {merge, each, capitalize} from 'lodash';
+import _ from 'lodash';
 
 var extRes = (function(){
 	// Holds all used items to make sure they are only loaded once
@@ -48,7 +48,7 @@ var extRes = (function(){
 		 * @param {string} resolver  Either 'body' or 'head' can be used here. Default: body
 		 */
 		addScript(fileName, options = {}, resolver = 'body'){
-			options = merge(merge({}, defaults.script), options);
+			options = _.merge({}, defaults.script, options);
 
 			try {
 				methods.ensureRegisterExists(fileName);
@@ -73,12 +73,12 @@ var extRes = (function(){
 		 * @param  {object} options
 		 * @param  {string} resolver
 		 */
-		addScriptTag(fileName, options, resolver, instance){
+		addScriptTag(fileName, options, resolver){
 			var scriptTag = methods.newScriptTag(fileName, options);
 
-			methods.addSuccessCallback(scriptTag, fileName, instance);
+			methods.addSuccessCallback(scriptTag, fileName);
 
-			methods['get' + capitalize(resolver)]().appendChild(scriptTag);
+			methods['get' + _.capitalize(resolver)]().appendChild(scriptTag);
 		},
 
 		/**
@@ -92,6 +92,7 @@ var extRes = (function(){
 				throw `${fileName} has already been loaded`;
 			}
 
+			// == else
 			if (typeof register[fileName] === "undefined") {
 				register[fileName] = [];
 			}
@@ -109,7 +110,7 @@ var extRes = (function(){
 			if(register === true){
 				callback.call(instance);
 			} else {
-				register.push(callback);
+				register.push(callback.bind(instance));
 			}
 		},
 
@@ -143,12 +144,12 @@ var extRes = (function(){
 		 * @param  {HTMLElement} scriptTag
 		 * @param  {String} fileName
 		 */
-		addSuccessCallback(scriptTag, fileName, instance){
+		addSuccessCallback(scriptTag, fileName){
 			scriptTag.onload =
 			scriptTag.onreadystatechange = function() {
 				if (register[fileName] !== true &&
 						(!this.readyState || this.readyState == "loaded" || this.readyState == "complete")) {
-					methods.executeCallbacks(fileName, instance);
+					methods.executeCallbacks(fileName);
 
 					register[fileName] = true;
 				}
@@ -161,9 +162,9 @@ var extRes = (function(){
 		 * @param  {string} fileName
 		 * @param  {Vue} instance
 		 */
-		executeCallbacks(fileName, instance){
+		executeCallbacks(fileName){
 			if(typeof register[fileName] !== "boolean"){
-				each(register[fileName], x => x.call(instance, fileName));
+				_.each(register[fileName], x => x(fileName));
 			}
 		},
 
@@ -174,7 +175,7 @@ var extRes = (function(){
 		 * @param {object} options
 		 */
 		addStyle(fileName, options = {}){
-			options = merge(merge({}, defaults.style), options);
+			options = _.merge({}, defaults.style, options);
 
 			let styleTag   = document.createElement('link');
 			styleTag.rel   = "stylesheet";
@@ -220,7 +221,7 @@ var extRes = (function(){
 })();
 
 export default {
-	created() {
+	attached() {
 		var type = typeof this.$options.external;
 
 		if (type !== "undefined") {
@@ -241,13 +242,13 @@ export default {
 
 				// We expect an array or an object that we then iterate,
 				// executing the proper method of adding on each item
-				each(this.$options.external, (v, k) => {
+				_.each(this.$options.external, (v, k) => {
 					// Case 1:
 					// The key references the URL and the value references the type. We
 					// pass default values, as well as the Vue component instance (Only
 					// relevant for scripts with a callback)
 					if (typeof k === "string") {
-						v = capitalize(v);
+						v = _.capitalize(v);
 
 						return extRes[`add${v}`](k, {}, 'body', that);
 					}
