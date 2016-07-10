@@ -3,6 +3,8 @@ Using this you can easily load script and style dependencies that you can easily
 
 I use [ES2015](https://babeljs.io/docs/learn-es2015/) features, so for maximum compatibility I would recommend using [babel](https://babeljs.io/) to compile it to Javascript that is better understood in older browsers.
 
+Whenever you use the callback option (either as the external value directly or in the array form) the Vue instance is bound to it. Also, for the success callback on scripts, the Vue instance is bound to it, so that you can fully access all of its properties.
+
 ## Dependencies
 The loader needs `merge`, `each` and `capitalize` from [lodash/lodash](https://github.com/lodash/lodash).
 
