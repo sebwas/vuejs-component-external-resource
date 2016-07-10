@@ -21,7 +21,7 @@ Vue.component('example-tag', {
 	external: [
 		'https://cdnjs.cloudflare.com/ajax/libs/960gs/0/960.min.css',
 		(l) => l.addScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.min.js', {
-			success: (fileName) => {
+			success(fileName) {
 				window.alert(fileName);
 			}
 		});
@@ -40,7 +40,7 @@ Using `external` as a function and use the loader API directly. It offers three 
 	external(loader) {
 		loader.add('https://cdnjs.cloudflare.com/ajax/libs/Hyphenator/5.0.1/Hyphenator.min.js'); // Automatically guess, or get an exception
 		loader.addScript('https://cdnjs.cloudflare.com/ajax/libs/SoundJS/0.6.0/soundjs.min.js', {
-			success: (fileName) => {
+			success(fileName) {
 				console.log('Loaded ' + fileName);
 			}
 		}, 'head');
