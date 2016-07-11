@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-var extRes = (function(){
+var extRes = (() => {
 	// Holds all used items to make sure they are only loaded once
 	var register = {};
 
@@ -8,7 +8,10 @@ var extRes = (function(){
 	var defaults = {
 		style: {
 			media: 'screen',
-			type: 'text/css'
+			type: 'text/css',
+			success: (fileName) => {
+				console.info('Loaded file ' + fileName);
+			}
 		},
 
 		script: {
@@ -26,7 +29,7 @@ var extRes = (function(){
 		 * Tries to automatically determine what type the file in question is and loads it accordingly or
 		 * throws an exception if it can't determine that. Uses the default options
 		 *
-		 * @param {string} fileName
+		 * @param {String} fileName
 		 */
 		add(fileName){
 			if (fileName.substr(-4) === '.css') {
@@ -43,35 +46,22 @@ var extRes = (function(){
 		/**
 		 * Adds a script by appending a script tag to the body or the head
 		 *
-		 * @param {string} fileName  The file to be loaded
-		 * @param {object} options   Options to overwrite the default options
-		 * @param {string} resolver  Either 'body' or 'head' can be used here. Default: body
+		 * @param {String} fileName  The file to be loaded
+		 * @param {Object} options   Options to overwrite the default options
+		 * @param {String} resolver  Either 'body' or 'head' can be used here. Default: body
 		 */
 		addScript(fileName, options = {}, resolver = 'body'){
 			options = _.merge({}, defaults.script, options);
 
-			try {
-				methods.ensureRegisterExists(fileName);
-				methods.addScriptTag(fileName, options, resolver, this);
-			} catch(e) {
-				if(e.toString().substr(-23) === "has already been loaded"){
-					console.info(e);
-
-					return true;
-				} else {
-					throw e;
-				}
-			} finally {
-				methods.addCallbackOrExecute(register[fileName], options.success, this);
-			}
+			methods.addTag.call(this, 'script', fileName, options, resolver);
 		},
 
 		/**
 		 * Adds the script tag to the HTML document
 		 *
-		 * @param  {string} fileName
-		 * @param  {object} options
-		 * @param  {string} resolver
+		 * @param {String} fileName
+		 * @param {Object} options
+		 * @param {String} resolver
 		 */
 		addScriptTag(fileName, options, resolver){
 			var scriptTag = methods.newScriptTag(fileName, options);
@@ -85,7 +75,7 @@ var extRes = (function(){
 		 * Makes sure the register fir the specified file name exists and adds it otherwise.
 		 * Also, if it does exist, this throws an exception.
 		 *
-		 * @param  {string} fileName
+		 * @param {String} fileName
 		 */
 		ensureRegisterExists(fileName, options, instance){
 			if (typeof register[fileName] !== "undefined") {
@@ -102,23 +92,22 @@ var extRes = (function(){
 		 * If the file has already been loaded it will directly execute the callback,
 		 * otherwise it will add the callback to the callback stack
 		 *
-		 * @param  {Array} register
-		 * @param  {function} callback
-		 * @param  {Vue} instance
+		 * @param {Array} register
+		 * @param {Function} callback
 		 */
-		addCallbackOrExecute(register, callback, instance){
+		addCallbackOrExecute(register, callback){
 			if(register === true){
-				callback.call(instance);
+				callback.call(this);
 			} else {
-				register.push(callback.bind(instance));
+				register.push(callback.bind(this));
 			}
 		},
 
 		/**
 		 * Return a new script tag based on the options and the file name
 		 *
-		 * @param  {string} fileName
-		 * @param  {object} options
+		 * @param {String} fileName
+		 * @param {Object} options
 		 * @return {HTMLElement}
 		 */
 		newScriptTag(fileName, options){
@@ -141,12 +130,12 @@ var extRes = (function(){
 		/**
 		 * Adds the success callback for scripts
 		 *
-		 * @param  {HTMLElement} scriptTag
-		 * @param  {String} fileName
+		 * @param {HTMLElement} el
+		 * @param {String} fileName
 		 */
-		addSuccessCallback(scriptTag, fileName){
-			scriptTag.onload =
-			scriptTag.onreadystatechange = function() {
+		addSuccessCallback(el, fileName){
+			el.onload =
+			el.onreadystatechange = function() {
 				if (register[fileName] !== true &&
 						(!this.readyState || this.readyState == "loaded" || this.readyState == "complete")) {
 					methods.executeCallbacks(fileName);
@@ -159,8 +148,8 @@ var extRes = (function(){
 		/**
 		 * Executes all registered callbacks if any
 		 *
-		 * @param  {string} fileName
-		 * @param  {Vue} instance
+		 * @param {String} fileName
+		 * @param {Vue} instance
 		 */
 		executeCallbacks(fileName){
 			if(typeof register[fileName] !== "boolean"){
@@ -171,17 +160,59 @@ var extRes = (function(){
 		/**
 		 * Adds a stylesheet by appending a link tag to the head
 		 *
-		 * @param {string} fileName
-		 * @param {object} options
+		 * @param {String} fileName
+		 * @param {Object} options
 		 */
 		addStyle(fileName, options = {}){
 			options = _.merge({}, defaults.style, options);
 
-			let styleTag   = document.createElement('link');
+			methods.addTag.call(this, 'style', fileName, options);
+		},
+
+		/**
+		 * Adds either a style's link tag or a script tag to the document while
+		 * making sure that every asset is only loaded once and the success
+		 * callback is executed correctly
+		 *
+		 * @param {String} type     Either 'style' or 'script'
+		 * @param {String} fileName
+		 * @param {Object} options
+		 * @param {String} resolver [optional; only for 'script' type] Either 'head' or 'body'. To determine where the script tag is added
+		 */
+		addTag(type, fileName, options, resolver) {
+			type = _.capitalize(type);
+
+			try {
+				methods.ensureRegisterExists(fileName);
+				methods[`add${type}Tag`].call(this, fileName, options, resolver);
+			} catch(e) {
+				if(e.toString().substr(-23) === "has already been loaded"){
+					console.info(e);
+
+					return true;
+				} else {
+					throw e;
+				}
+			} finally {
+				methods.addCallbackOrExecute.call(this, register[fileName], options.success);
+			}
+		},
+
+		/**
+		 * Adds a style link tag to the head using the specified file name and
+		 * options and adds the success callback
+		 *
+		 * @param {String} fileName
+		 * @param {Object} options
+		 */
+		addStyleTag(fileName, options) {
+			var styleTag   = document.createElement('link');
 			styleTag.rel   = "stylesheet";
 			styleTag.href  = fileName;
 			styleTag.media = options.media;
 			styleTag.type  = options.type;
+
+			methods.addSuccessCallback(styleTag, fileName);
 
 			methods.getHead().appendChild(styleTag);
 		},
