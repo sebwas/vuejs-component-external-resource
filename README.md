@@ -9,9 +9,8 @@ Whenever you use the callback option (either as the external value directly or i
 The loader needs `merge`, `each` and `capitalize` from [lodash/lodash](https://github.com/lodash/lodash).
 
 ## Example
-The external-resources.js file is intended to be used as a mixin.
+The external-resources.js file is intended to be used as a mixin. For a full example component see [EXAMPLE.md](EXAMPLE.md).
 
-Example:
 ```javascript
 import externalResources from './mixins/external-resources';
 
@@ -73,5 +72,39 @@ Using `external` as an array. Here you have two possibilities: specify the resou
 		(l) => l.addStyle('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css')
 	]
 	// ...
+}
+```
+
+## API
+The three exposed API functions are `add`, `addScript` and `addStyle`.
+
+### `add(fileName)`
+The add function takes only one argument, a string, that specifies the file name of the file to be loaded. Since neither script or style are explicitly specified, it checks the file's extension for `'css'` or `'js'`. This could be extended for a more advanced detection in the future. <br />
+Once detected it will either call `addScript` or `addStyle`.
+
+If the function can't determine the type of the asset it will throw an exception.
+
+### `addStyle(fileName, options)`
+The `fileName` is a string specifying the stylesheet to be loaded. `options` is optional, but can specify the following items:
+
+```javascript
+options = {
+	media: 'screen', // The media attribute's value in the link tag
+	type: 'text/css', // The type value in the link tag
+	success: (fileName) => { // The success callback when the file is loaded
+		console.info('Loaded file ' + fileName);
+	}
+}
+```
+
+### `addScript(fileName, options, resolver)`
+The `fileName` is a string specifying the script file to be loaded. _Options_ and _resolver_ are optional. `options`, like above is an object containing option directives. `resolver` specifies where the script tag is supposed to be added; possible values: `'head'` or `'body'`; default is `'body'`.
+
+```javascript
+options = {
+	type: 'text/javascript', // The type to be used with the script tag
+	success: (fileName) => { // The success callback when the file is loaded
+		console.info('Loaded file ' + fileName);
+	}
 }
 ```
