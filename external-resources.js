@@ -9,14 +9,14 @@ var extRes = (() => {
 		style: {
 			media: 'screen',
 			type: 'text/css',
-			success: (fileName) => {
+			success(fileName) {
 				console.info('Loaded file ' + fileName);
 			}
 		},
 
 		script: {
 			type: 'text/javascript',
-			success: (fileName) => {
+			success(fileName) {
 				console.info('Loaded file ' + fileName);
 			}
 		},
@@ -31,7 +31,9 @@ var extRes = (() => {
 		 *
 		 * @param {String} fileName
 		 */
-		add(fileName){
+		add(fileName) {
+			fileName = fileName.split('?').unshift();
+
 			if (fileName.substr(-4) === '.css') {
 				return methods.addStyle(fileName);
 			}
@@ -50,7 +52,7 @@ var extRes = (() => {
 		 * @param {Object} options   Options to overwrite the default options
 		 * @param {String} resolver  Either 'body' or 'head' can be used here. Default: body
 		 */
-		addScript(fileName, options = {}, resolver = 'body'){
+		addScript(fileName, options = {}, resolver = 'body') {
 			options = _.merge({}, defaults.script, options);
 
 			methods.addTag.call(this, 'script', fileName, options, resolver);
@@ -63,7 +65,7 @@ var extRes = (() => {
 		 * @param {Object} options
 		 * @param {String} resolver
 		 */
-		addScriptTag(fileName, options, resolver){
+		addScriptTag(fileName, options, resolver) {
 			var scriptTag = methods.newScriptTag(fileName, options);
 
 			methods.addSuccessCallback(scriptTag, fileName);
@@ -77,7 +79,7 @@ var extRes = (() => {
 		 *
 		 * @param {String} fileName
 		 */
-		ensureRegisterExists(fileName, options, instance){
+		ensureRegisterExists(fileName, options, instance) {
 			if (typeof register[fileName] !== "undefined") {
 				throw `${fileName} has already been loaded`;
 			}
@@ -95,8 +97,8 @@ var extRes = (() => {
 		 * @param {Array} register
 		 * @param {Function} callback
 		 */
-		addCallbackOrExecute(register, callback){
-			if(register === true){
+		addCallbackOrExecute(register, callback) {
+			if(register === true) {
 				callback.call(this);
 			} else {
 				register.push(callback.bind(this));
@@ -110,19 +112,11 @@ var extRes = (() => {
 		 * @param {Object} options
 		 * @return {HTMLElement}
 		 */
-		newScriptTag(fileName, options){
+		newScriptTag(fileName, options) {
 			var scriptTag  = document.createElement('script');
 
 			scriptTag.src  = fileName;
 			scriptTag.type = options.type;
-
-			if (options.async) {
-				scriptTag.setAttribute('async', 'async');
-			}
-
-			if (options.defer) {
-				scriptTag.setAttribute('defer', 'defer');
-			}
 
 			return scriptTag;
 		},
@@ -133,7 +127,7 @@ var extRes = (() => {
 		 * @param {HTMLElement} el
 		 * @param {String} fileName
 		 */
-		addSuccessCallback(el, fileName){
+		addSuccessCallback(el, fileName) {
 			el.onload =
 			el.onreadystatechange = function() {
 				if (register[fileName] !== true &&
@@ -151,8 +145,8 @@ var extRes = (() => {
 		 * @param {String} fileName
 		 * @param {Vue} instance
 		 */
-		executeCallbacks(fileName){
-			if(typeof register[fileName] !== "boolean"){
+		executeCallbacks(fileName) {
+			if(typeof register[fileName] !== "boolean") {
 				_.each(register[fileName], x => x(fileName));
 			}
 		},
@@ -163,7 +157,7 @@ var extRes = (() => {
 		 * @param {String} fileName
 		 * @param {Object} options
 		 */
-		addStyle(fileName, options = {}){
+		addStyle(fileName, options = {}) {
 			options = _.merge({}, defaults.style, options);
 
 			methods.addTag.call(this, 'style', fileName, options);
@@ -186,7 +180,7 @@ var extRes = (() => {
 				methods.ensureRegisterExists(fileName);
 				methods[`add${type}Tag`].call(this, fileName, options, resolver);
 			} catch(e) {
-				if(e.toString().substr(-23) === "has already been loaded"){
+				if(e.toString().substr(-23) === "has already been loaded") {
 					console.info(e);
 
 					return true;
@@ -222,7 +216,7 @@ var extRes = (() => {
 		 *
 		 * @return {HTMLElement}
 		 */
-		getHead(){
+		getHead() {
 			return document.getElementsByTagName('head')[0];
 		},
 
@@ -231,17 +225,14 @@ var extRes = (() => {
 		 *
 		 * @return {HTMLElement}
 		 */
-		getBody(){
+		getBody() {
 			return document.getElementsByTagName('body')[0];
 		}
 	};
 
 	// Only expose the add* functions to the outside
 	return {
-		add:       methods.add,
-		addScript: methods.addScript,
-		addStyle:  methods.addStyle,
-		bind:      (obj) => {
+		bind: (obj) => {
 			return {
 				add:       methods.add.bind(obj),
 				addScript: methods.addScript.bind(obj),
@@ -267,7 +258,7 @@ export default {
 			// Type 2:
 			// We have an object or array that wants to be iterated with
 			// different cases for each item on how it is treated (see below)
-			if((type === "object" || type === "array") && this.$options.external !== null){
+			if((type === "object" || type === "array") && this.$options.external !== null) {
 				// The success callback's context when adding a script
 				var that = this;
 
@@ -281,7 +272,7 @@ export default {
 					if (typeof k === "string") {
 						v = _.capitalize(v);
 
-						return extRes[`add${v}`](k, {}, 'body', that);
+						return extRes.bind(that)[`add${v}`](k, {});
 					}
 
 					// Case 2:
