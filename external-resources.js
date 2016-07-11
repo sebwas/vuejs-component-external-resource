@@ -32,7 +32,7 @@ var extRes = (() => {
 		 * @param {String} fileName
 		 */
 		add(fileName) {
-			fileName = fileName.split('?').unshift();
+			fileName = fileName.split('?').shift();
 
 			if (fileName.substr(-4) === '.css') {
 				return methods.addStyle(fileName);
@@ -286,7 +286,7 @@ export default {
 					// If not specified, try to add anyway, guessing the type (File extension
 					// based as of now. Think about fetching and intelligently guessing
 					// the type by looking at the return value in the future.)
-					return extRes.add(v);
+					return extRes.bind(that).add(v);
 				});
 			}
 		}
