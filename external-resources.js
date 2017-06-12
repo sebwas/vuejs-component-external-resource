@@ -243,52 +243,54 @@ var extRes = (() => {
 })();
 
 export default {
-	attached() {
-		var type = typeof this.$options.external;
+	mounted() {
+		this.$nextTick(() => {
+			var type = typeof this.$options.external;
 
-		if (type !== "undefined") {
-			// Type 1:
-			// We have a function as external specification, so we simply
-			// execute it in the context of our Vue component, exposing our
-			// extRes object
-			if (type === "function") {
-				return this.$options.external.call(this, extRes.bind(this));
+			if (type !== "undefined") {
+				// Type 1:
+				// We have a function as external specification, so we simply
+				// execute it in the context of our Vue component, exposing our
+				// extRes object
+				if (type === "function") {
+					return this.$options.external.call(this, extRes.bind(this));
+				}
+
+				// Type 2:
+				// We have an object or array that wants to be iterated with
+				// different cases for each item on how it is treated (see below)
+				if((type === "object" || type === "array") && this.$options.external !== null) {
+					// The success callback's context when adding a script
+					var that = this;
+
+					// We expect an array or an object that we then iterate,
+					// executing the proper method of adding on each item
+					_.each(this.$options.external, (v, k) => {
+						// Case 1:
+						// The key references the URL and the value references the type. We
+						// pass default values, as well as the Vue component instance (Only
+						// relevant for scripts with a callback)
+						if (typeof k === "string") {
+							v = _.capitalize(v);
+
+							return extRes.bind(that)[`add${v}`](k, {});
+						}
+
+						// Case 2:
+						// The value is a function, so we execute it in the context of our Vue
+						// component with the add* functions passed as object
+						if (typeof v === "function") {
+							return v.call(that, extRes.bind(that));
+						}
+
+						// Fallback:
+						// If not specified, try to add anyway, guessing the type (File extension
+						// based as of now. Think about fetching and intelligently guessing
+						// the type by looking at the return value in the future.)
+						return extRes.bind(that).add(v);
+					});
+				}
 			}
-
-			// Type 2:
-			// We have an object or array that wants to be iterated with
-			// different cases for each item on how it is treated (see below)
-			if((type === "object" || type === "array") && this.$options.external !== null) {
-				// The success callback's context when adding a script
-				var that = this;
-
-				// We expect an array or an object that we then iterate,
-				// executing the proper method of adding on each item
-				_.each(this.$options.external, (v, k) => {
-					// Case 1:
-					// The key references the URL and the value references the type. We
-					// pass default values, as well as the Vue component instance (Only
-					// relevant for scripts with a callback)
-					if (typeof k === "string") {
-						v = _.capitalize(v);
-
-						return extRes.bind(that)[`add${v}`](k, {});
-					}
-
-					// Case 2:
-					// The value is a function, so we execute it in the context of our Vue
-					// component with the add* functions passed as object
-					if (typeof v === "function") {
-						return v.call(that, extRes.bind(that));
-					}
-
-					// Fallback:
-					// If not specified, try to add anyway, guessing the type (File extension
-					// based as of now. Think about fetching and intelligently guessing
-					// the type by looking at the return value in the future.)
-					return extRes.bind(that).add(v);
-				});
-			}
-		}
+		});
 	}
 }
